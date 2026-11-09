@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#071322" />
+  <title>Turbo Clash — Arcade Arena</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="game-shell" id="gameShell">
+    <canvas id="game" aria-label="Turbo Clash 2D car soccer game"></canvas>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <section class="hud" id="hud" aria-live="polite">
+      <div class="team-score blue-score"><span class="team-dot"></span><span class="team-name">TURBO</span><strong id="blueScore">0</strong></div>
+      <div class="match-clock"><span class="clock-label">MATCH TIME</span><strong id="clock">01:30</strong></div>
+      <div class="team-score red-score"><strong id="redScore">0</strong><span class="team-name">ROCKETS</span><span class="team-dot"></span></div>
+      <button class="icon-button pause-button" id="pauseButton" aria-label="Pause match">Ⅱ</button>
+      <div class="boost-meter"><span class="boost-label">BOOST</span><div class="boost-track"><i id="boostFill"></i></div><b id="boostPct">100</b></div>
+      <div class="toast" id="toast">FIRST TO 5 WINS</div>
+    </section>
+
+    <section class="overlay menu-overlay" id="menuOverlay">
+      <div class="menu-card">
+        <div class="eyebrow"><span></span> POCKET-SIZED MAYHEM <span></span></div>
+        <h1>TURBO<br /><em>CLASH</em></h1>
+        <p class="tagline">Rocket-powered car soccer.<br />Brawler attitude.</p>
+        <div class="feature-row"><span>⚡ BOOST</span><span>✦ BLAST</span><span>◎ SCORE</span></div>
+        <button class="primary-button" id="playButton">PLAY MATCH <b>↗</b></button>
+        <div class="menu-hint" id="menuHint">MOVE <kbd>A</kbd><kbd>D</kbd> &nbsp; JUMP <kbd>SPACE</kbd> &nbsp; BOOST <kbd>SHIFT</kbd></div>
+        <div class="mobile-hint">LANDSCAPE OR PORTRAIT · TOUCH CONTROLS READY</div>
+      </div>
+      <div class="menu-badge"><b>01</b><span>ARCADE<br />DIVISION</span></div>
+    </section>
+
+    <section class="overlay pause-overlay hidden" id="pauseOverlay">
+      <div class="small-card"><div class="eyebrow">TIME OUT</div><h2>TAKE A BREATHER.</h2><button class="primary-button" id="resumeButton">BACK TO THE ACTION <b>↗</b></button><button class="text-button" id="restartButton">RESTART MATCH</button></div>
+    </section>
+    <section class="overlay result-overlay hidden" id="resultOverlay">
+      <div class="small-card"><div class="eyebrow" id="resultEyebrow">FINAL WHISTLE</div><h2 id="resultTitle">VICTORY!</h2><p id="resultCopy">The arena is yours.</p><button class="primary-button" id="rematchButton">RUN IT BACK <b>↗</b></button></div>
+    </section>
+
+    <div class="touch-controls" id="touchControls">
+      <div class="joystick" id="joystick" aria-label="Move"><div class="joy-ring"></div><div class="joy-knob" id="joyKnob"></div><span class="joy-left">◀</span><span class="joy-right">▶</span></div>
+      <div class="action-buttons">
+        <button class="action-button jump-action" id="jumpButton"><span>↑</span><b>JUMP</b></button>
+        <button class="action-button boost-action" id="boostButton"><span>⚡</span><b>BOOST</b></button>
+        <button class="action-button blast-action" id="blastButton"><span>✦</span><b>BLAST</b></button>
+      </div>
+    </div>
+    <div class="mobile-tip" id="mobileTip">DRIVE · JUMP · BLAST YOUR WAY TO THE GOAL</div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
