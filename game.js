@@ -6,7 +6,7 @@
   const hud = $('hud'), menu = $('menuOverlay'), pauseLayer = $('pauseOverlay'), resultLayer = $('resultOverlay');
   const blueScoreEl = $('blueScore'), redScoreEl = $('redScore'), clockEl = $('clock'), boostFill = $('boostFill'), boostPct = $('boostPct');
   const ground = 552, ceiling = 112;
-  let W = 1200, H = 675, scale = 1, dpr = 1, last = 0, state = 'menu', timeLeft = 90, scoreBlue = 0, scoreRed = 0, goalPause = false, pauseGoalRemaining = 0;
+  let W = 1200, H = 675, scale = 1, dpr = 1, last = 0, state = 'menu', timeLeft = 90, scoreBlue = 0, scoreRed = 0, overtime = false, overtimeGoal = false, goalPause = false, pauseGoalRemaining = 0;
   let player, bot, ball, particles = [], shots = [], stars = [], shake = 0, toastUntil = 0, toastText = '';
   let audioCtx = null, soundOn = true, touchAxis = 0, touchBoost = false;
   const keys = Object.create(null);
@@ -29,7 +29,7 @@
   }
   function init(){resize();resetRound();window.addEventListener('resize',resize);requestAnimationFrame(frame);}
 
-  function startMatch(){scoreBlue=0;scoreRed=0;timeLeft=90;goalPause=false;state='playing';resetRound();hud.classList.add('active');menu.classList.add('hidden');pauseLayer.classList.add('hidden');resultLayer.classList.add('hidden');$('toast').textContent='FIRST TO 5 WINS';toastUntil=performance.now()+2200;audioUnlock();}
+  function startMatch(){scoreBlue=0;scoreRed=0;timeLeft=90;overtime=false;overtimeGoal=false;goalPause=false;state='playing';resetRound();hud.classList.add('active');menu.classList.add('hidden');pauseLayer.classList.add('hidden');resultLayer.classList.add('hidden');$('toast').textContent='FIRST TO 5 WINS';toastUntil=performance.now()+2200;audioUnlock();}
   function pauseMatch(){if(state!=='playing')return;state='paused';if(goalPause){pauseGoalRemaining=Math.max(0,goalPause-performance.now());goalPause=true;}pauseLayer.classList.remove('hidden');}
   function resumeMatch(){if(state!=='paused')return;state='playing';pauseLayer.classList.add('hidden');last=performance.now();if(goalPause)goalPause=performance.now()+pauseGoalRemaining;}
   function finishMatch(){state='finished';resultLayer.classList.remove('hidden');$('resultEyebrow').textContent=scoreBlue===scoreRed?'OVERTIME OVER':'FINAL WHISTLE';$('resultTitle').textContent=scoreBlue===scoreRed?'DRAW!':scoreBlue>scoreRed?'VICTORY!':'DEFEAT';$('resultTitle').style.color=scoreBlue===scoreRed?'#f6d579':scoreBlue>scoreRed?'#62e3ff':'#ff8290';$('resultCopy').textContent=scoreBlue===scoreRed?'Evenly matched. One more?':scoreBlue>scoreRed?'The arena is yours. Nice driving.':'The Rockets take this one. Run it back?';}
@@ -39,7 +39,7 @@
   function toast(text){toastText=text;$('toast').textContent=text;toastUntil=performance.now()+1800;}
 
   function jump(car){if(car.grounded&&state==='playing'){car.vy=-545;car.grounded=false;burst(car.x,ground-8,car.team==='blue'?'#65dfff':'#ff8490',5,60);playSound(180,.1,'triangle',.025)}}
-  function boost(car,dt,playerControlled=false){const want=playerControlled?(keys.Shift||keys.ArrowUp||touchBoost):bot.wantsBoost;if(want&&car.boost>0){car.boosting=true;car.boost=Math.max(0,car.boost-35*dt);car.vx+=car.facing*490*dt;if(car.grounded)car.vy-=32*dt;if(Math.random()<dt*38){const c=car.team==='blue'?'#66eaff':'#ff6879';particles.push({x:car.x-car.facing*22,y:car.y+rand(-6,8),vx:-car.facing*rand(70,210),vy:rand(-35,35),life:.28,max:.28,size:rand(3,7),color:c});}}else{car.boosting=false;car.boost=Math.min(100,car.boost+15*dt)}}
+  function boost(car,dt,playerControlled=false){const want=playerControlled?(keys.Shift||touchBoost):bot.wantsBoost;if(want&&car.boost>0){car.boosting=true;car.boost=Math.max(0,car.boost-35*dt);car.vx+=car.facing*490*dt;if(car.grounded)car.vy-=32*dt;if(Math.random()<dt*38){const c=car.team==='blue'?'#66eaff':'#ff6879';particles.push({x:car.x-car.facing*22,y:car.y+rand(-6,8),vx:-car.facing*rand(70,210),vy:rand(-35,35),life:.28,max:.28,size:rand(3,7),color:c});}}else{car.boosting=false;car.boost=Math.min(100,car.boost+15*dt)}}
   function fire(car){if(car.attack>0||state!=='playing')return;car.attack=.62;const color=car.team==='blue'?'#5be7ff':'#ff6178';shots.push({x:car.x+car.facing*26,y:car.y-9,vx:car.facing*570,team:car.team,life:1.55,color});playSound(320,.11,'sawtooth',.025);burst(car.x+car.facing*25,car.y-9,color,4,50);}
 
   function updateCar(car,dt,isPlayer){
@@ -64,10 +64,10 @@
 
   function update(dt){
     if(state!=='playing')return;
-    timeLeft-=dt;if(timeLeft<=0){timeLeft=0;finishMatch();return;}
+    if(!overtime){timeLeft-=dt;if(timeLeft<=0){timeLeft=0;if(scoreBlue===scoreRed){overtime=true;toast('SUDDEN DEATH — NEXT GOAL WINS!');}else{finishMatch();return;}}}
     if(goalPause){
       for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=100*dt;p.vx*=Math.pow(.95,dt*60);p.life-=dt;}particles=particles.filter(p=>p.life>0);
-      if(performance.now()>=goalPause){goalPause=false;if(state==='playing')resetRound();}
+      if(performance.now()>=goalPause){goalPause=false;if(state==='playing'){if(scoreBlue>=5||scoreRed>=5||overtimeGoal)finishMatch();else resetRound();}}
       if(shake>0)shake=Math.max(0,shake-dt*20);return;
     }
     updateCar(player,dt,true);updateCar(bot,dt,false);
@@ -94,7 +94,7 @@
     const dx=ball.x-car.x,dy=ball.y-(car.y-4),nearestX=clamp(dx,-28,28),nearestY=clamp(dy,-17,17),ox=dx-nearestX,oy=dy-nearestY,d=Math.hypot(ox,oy);
     if(d<ball.r){let nx,ny;if(d<.01){nx=car.facing;ny=-.25;}else{nx=ox/d;ny=oy/d;}const push=ball.r-d;ball.x+=nx*push;ball.y+=ny*push;const hit=Math.max(0,car.vx*nx+(-car.vy)*ny);ball.vx+=nx*(190+hit*.72)+car.vx*.48;ball.vy+=ny*(180+hit*.5)-Math.max(0,-car.vy)*.22;ball.vx=clamp(ball.vx,-720,720);ball.vy=clamp(ball.vy,-760,570);if(push>8){burst(ball.x-nx*ball.r,ball.y-ny*ball.r,car.team==='blue'?'#6aeaff':'#ff7789',4,60);playSound(140+Math.random()*70,.07,'triangle',.018)}}
   }
-  function scoreGoal(team){if(goalPause)return;if(team==='blue')scoreBlue++;else scoreRed++;shake=7;burst(team==='blue'?W-35:35,ground-75,team==='blue'?'#4edfff':'#ff6177',38,290);playSound(220,.45,'sawtooth',.05);playSound(550,.28,'triangle',.04);toast(team==='blue'?'TURBO SCORES!':'ROCKETS SCORE!');if(scoreBlue>=5||scoreRed>=5){goalPause=false;setTimeout(()=>{if(state==='playing')finishMatch()},650)}else{goalPause=performance.now()+720;}}
+  function scoreGoal(team){if(goalPause)return;if(team==='blue')scoreBlue++;else scoreRed++;shake=7;burst(team==='blue'?W-35:35,ground-75,team==='blue'?'#4edfff':'#ff6177',38,290);playSound(220,.45,'sawtooth',.05);playSound(550,.28,'triangle',.04);toast(team==='blue'?'TURBO SCORES!':'ROCKETS SCORE!');overtimeGoal=overtime;goalPause=performance.now()+(scoreBlue>=5||scoreRed>=5||overtimeGoal?650:720);}
 
   function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
   function drawBackground(now){
@@ -160,7 +160,7 @@
     if(state==='menu'){ctx.save();ctx.globalAlpha=.16;ctx.strokeStyle='#49def8';ctx.setLineDash([6,9]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(W*.5,ground);ctx.lineTo(W*.5,ground+32);ctx.stroke();ctx.restore();}
     updateHud();
   }
-  function updateHud(){blueScoreEl.textContent=scoreBlue;redScoreEl.textContent=scoreRed;const sec=Math.ceil(timeLeft);clockEl.textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;if(player){boostFill.style.width=player.boost+'%';boostPct.textContent=Math.round(player.boost)}if(state==='playing'&&performance.now()<toastUntil)$('toast').textContent=toastText;}
+  function updateHud(){blueScoreEl.textContent=scoreBlue;redScoreEl.textContent=scoreRed;const sec=Math.ceil(timeLeft);clockEl.textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;document.querySelector('.clock-label').textContent=overtime?'SUDDEN DEATH':'MATCH TIME';if(overtime)clockEl.textContent='NEXT GOAL';if(player){boostFill.style.width=player.boost+'%';boostPct.textContent=Math.round(player.boost)}if(state==='playing'&&performance.now()<toastUntil)$('toast').textContent=toastText;}
   function frame(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;update(dt);draw(now);requestAnimationFrame(frame)}
 
   $('playButton').addEventListener('click',startMatch);$('resumeButton').addEventListener('click',resumeMatch);$('restartButton').addEventListener('click',startMatch);$('rematchButton').addEventListener('click',startMatch);$('pauseButton').addEventListener('click',pauseMatch);
